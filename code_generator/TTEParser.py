@@ -1298,9 +1298,12 @@ class TTEParser(object):
         input_zero_point = self.data[op["inputs"][2]["name"]][0]
         output_zero_point = self.data[op["inputs"][6]["name"]][0]
         input2_zero_point = self.data[op["inputs"][3]["name"]][0]
-        input_scale = self.data[op["inputs"][4]["name"]][0]
-        input2_scale = self.data[op["inputs"][5]["name"]][0]
-        output_scale = self.data[op["inputs"][7]["name"]][0]
+        # input_scale = self.data[op["inputs"][4]["name"]][0]
+        # input2_scale = self.data[op["inputs"][5]["name"]][0]
+        # output_scale = self.data[op["inputs"][7]["name"]][0]
+        input_scale = self.data[op["inputs"][4]["name"]]
+        input2_scale = self.data[op["inputs"][5]["name"]]
+        output_scale = self.data[op["inputs"][7]["name"]]
         (
             left_shift,
             input_multiplier,
