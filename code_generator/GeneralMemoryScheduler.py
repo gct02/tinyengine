@@ -352,7 +352,7 @@ class GeneralMemoryScheduler:
 
         # calculate peak mem
         self.peakmem = (
-            self.allocator.get_peak() + self.buffers["im2col"] + self.buffers["kernel"]  # + self.buffers["trainable"]
+            self.allocator.get_peak() + self.buffers["im2col"] + self.buffers["kernel"]  + self.buffers["trainable"]
         )
 
     def dumpLayerIndex(self):
