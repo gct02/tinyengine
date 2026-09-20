@@ -435,7 +435,11 @@ class TTEParser(object):
                     self.outputTables.append(outputInfo(name, idx, int(length), dtype))
                     _removeLayers(self.model, op_dict)
                 else:
-                    raise NotImplementedError
+                    _updateIdx(
+                        self.model, self.layer,
+                        op["inputs"][0]["name"], op["outputs"][0]["name"]
+                    )
+                    # raise NotImplementedError
             elif (
                 FUSHION_CONFIG[FUSE_WHERE_ZEROSSTR]
                 and op_type == "where"
@@ -1431,7 +1435,8 @@ class TTEParser(object):
         output_dtype = get_dtype(output_info)
 
         if "scale" in input2_info["name"]:
-            scale_from_add = self.data[input2_info["name"]][0]
+            # scale_from_add = self.data[input2_info["name"]][0]
+            scale_from_add = self.data[input2_info["name"]]
         else:
             scale_from_add = None
 
@@ -1483,8 +1488,10 @@ class TTEParser(object):
         if "scale" in input2_info["name"]:
             # should be a scaler then
             if "qadd" in input2_info["name"]:
-                scale_from_add = self.data[input2_info["name"]][0]
-                constant = self.data[input2_info["name"]][0]
+                # scale_from_add = self.data[input2_info["name"]][0]
+                # constant = self.data[input2_info["name"]][0]
+                scale_from_add = self.data[input2_info["name"]]
+                constant = self.data[input2_info["name"]]
             else:
                 scale_conv_2d_op = _findConv2dwithScaleName(self.model, self.layer, input2_info["name"])
 

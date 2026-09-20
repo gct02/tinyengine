@@ -245,6 +245,10 @@ class GeneralMemoryScheduler:
             layermem["scale"] = op.get_scale_size()
             layermem["runtime"] = op.get_sbuf_size()
             layermem["kernel"] = op.get_kbuf_size()
+
+            if layermem["runtime"] > 0:
+                print(f"{op.params['input_idx']}, {op.params['input_h']}, {layermem['runtime']}")
+
             self._enlargeBuffer("im2col", layermem["runtime"])
             self._enlargeBuffer("kernel", layermem["kernel"])
 
