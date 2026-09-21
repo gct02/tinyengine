@@ -49,8 +49,14 @@ class BaseAllocator:
         name=None,
         type="activation",
         stride2_inplace_idx=None,
+        debug=False
     ) -> int:
         tensor_idx = len(self.rectangles)
+        if debug:
+            print(
+                f'Allocating tensor {tensor_idx}: '
+                f'start={start}, end={end}, size={size}, name={name}, type={type}'
+            )
         self.rectangles.append(
             {
                 "start": start,
@@ -75,8 +81,7 @@ class BaseAllocator:
 
     def allocate(self):
         # place each rectangle
-        print(f"Deriving the memory schedule for {len(self.rectangles)} activation tensors.")
-        for cnt, rec in enumerate(tqdm(self.rectangles)):
+        for cnt, rec in enumerate(self.rectangles):
             # fit each tensor into the memmory
             rec["placement"] = self.fit(rec)
 

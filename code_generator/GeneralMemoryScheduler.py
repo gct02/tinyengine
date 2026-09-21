@@ -75,9 +75,13 @@ class GeneralMemoryScheduler:
                 return True
         return False
 
-    def allocateMemory(self):
+    def allocateMemory(self, debug=False):
         # assign the same graph index for inplace operations
         # note: we need to handle stride == 2 for int8 depthwise to save memory
+        if debug:
+            print(f'Allocating {len(self.layer)} layers')
+            print()
+
         if self.USE_INPLACE:
             for i, op in enumerate(self.layer):
                 if op.params["op"] == "DEPTHWISE_CONV_2D" and op.params["input_dtype"] == "int8" and not self.tflite_op:
@@ -164,6 +168,16 @@ class GeneralMemoryScheduler:
         all_t_size = 0
         # go through all tensors in the model
         for i, op in enumerate(self.layer):
+            if debug:
+                print(
+                    f'{i}: op={op.params["op"]}, '
+                    f'input_idx={op.params.get("input_idx", "none")}, '
+                    f'output_idx={op.params.get("output_idx", "none")}, '
+                    f'input_dtype={op.params["input_dtype"]}, '
+                    f'output_dtype={op.params["output_dtype"]}'
+                )
+                print("Inputs:", ", ".join(t.graph_idx for t in op.input_tensors))
+                print("Outputs:", ", ".join(t.graph_idx for t in op.output_tensors))
             # get all unallocated tensors for this layer
             unallocated_tensors = []
             for t in op.input_tensors:
@@ -222,10 +236,12 @@ class GeneralMemoryScheduler:
                     "is_start_of_normal_inference_block" in op.params
                     and op.params["is_start_of_normal_inference_block"]
                 ):
+                    if debug:
+                        print('Patch-based inference.')
                     if t in op.input_tensors:
                         start_idx = 0
                 # add the tensor
-                t.allocator_idx = self.allocator.addTensor(start_idx, end_idx, t.len(), name=t.graph_idx, type=ttype)
+                t.allocator_idx = self.allocator.addTensor(start_idx, end_idx, t.len(), name=t.graph_idx, type=ttype, debug=debug)
                 # propagate the allocation to tensors with the same idx
                 for j in range(i + 1, num_layers):
                     opp = self.layer[j]
@@ -239,16 +255,11 @@ class GeneralMemoryScheduler:
 
             # for detailed memory
             layermem = {}
-
             layermem["MAC"] = op.get_macs()
             layermem["activation"] = op.get_activation_size()
             layermem["scale"] = op.get_scale_size()
             layermem["runtime"] = op.get_sbuf_size()
             layermem["kernel"] = op.get_kbuf_size()
-
-            if layermem["runtime"] > 0:
-                print(f"{op.params['input_idx']}, {op.params['input_h']}, {layermem['runtime']}")
-
             self._enlargeBuffer("im2col", layermem["runtime"])
             self._enlargeBuffer("kernel", layermem["kernel"])
 
@@ -281,6 +292,10 @@ class GeneralMemoryScheduler:
             self.__increaseFlash(layermem["weight"])
             self.__increaseFlash(layermem["bias"])
             self.__increaseFlash(layermem["scale"])
+
+            if debug:
+                print(f"Layermem={layermem}")
+                print()
 
             self.layermem.append(layermem)
 
@@ -316,7 +331,7 @@ class GeneralMemoryScheduler:
         # Reorder the rectangles to decide which tensor needs to be scheduled first
         self.allocator.sortSize()
         self.allocator.allocate()
-        self.allocator.visualize(self.mem_visual_path)
+        # self.allocator.visualize(self.mem_visual_path)
         self._enlargeBuffer("input_output", self.allocator.get_peak())
 
         # sanity check, see if all tensors have been allocated
@@ -356,7 +371,7 @@ class GeneralMemoryScheduler:
 
         # calculate peak mem
         self.peakmem = (
-            self.allocator.get_peak() + self.buffers["im2col"] + self.buffers["kernel"]  + self.buffers["trainable"]
+            self.allocator.get_peak() + self.buffers["im2col"] + self.buffers["kernel"] # + self.buffers["trainable"]
         )
 
     def dumpLayerIndex(self):

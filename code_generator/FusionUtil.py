@@ -347,6 +347,8 @@ def _castisFusable(layers, cast_op):
 def _castisFusable_for_gconv(layers, cast_op):
     # find the output
     idx, f_op_1 = find_following_link_op(layers, cast_op)
+    if f_op_1 is None:
+        return False, None
     if f_op_1["type"] != "reshape":
         return False, None
     idx, f_op_2 = find_following_link_op(layers, f_op_1)

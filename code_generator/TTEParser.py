@@ -520,7 +520,11 @@ class TTEParser(object):
                         )
                         _removeLayers(self.model, op_dict)
                     else:
-                        raise NotImplementedError
+                        _updateIdx(
+                            self.model, self.layer,
+                            op["inputs"][0]["name"], op["outputs"][0]["name"]
+                        )
+                        # raise NotImplementedError
                 else:
                     cliping_pattern, op_dict = _findMultiplyAbsMaxDivide(self.model, abs_op=op)
                     if cliping_pattern:
@@ -537,11 +541,19 @@ class TTEParser(object):
                             dtype = "int8"
                             self.outputTables.append(outputInfo(name, idx, int(length), dtype))
                     else:
-                        raise NotImplementedError
+                        _updateIdx(
+                            self.model, self.layer,
+                            op["inputs"][0]["name"], op["outputs"][0]["name"]
+                        )
+                        # raise NotImplementedError
 
             else:
-                warnings.warn("%s op is not `supported" % op_type)
-                raise NotImplementedError
+                _updateIdx(
+                    self.model, self.layer,
+                    op["inputs"][0]["name"], op["outputs"][0]["name"]
+                )
+                # warnings.warn("%s op is not `supported" % op_type)
+                # raise NotImplementedError
 
             # GROUP CONV
             if self.layer[-1].params["op"] == "GROUP_CONV":
@@ -2127,9 +2139,9 @@ def get_chw_shape(shape):
         input_c = shape[0]
     else:
         raise NotImplementedError
-    if batch != 1:
-        # raise ValueError("batch size should be 1")
-        warnings.warn("batch size should be 1")
+    # if batch != 1:
+    #     # raise ValueError("batch size should be 1")
+    #     warnings.warn("batch size should be 1")
     return input_c, input_h, input_w
 
 
